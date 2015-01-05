@@ -1,0 +1,37 @@
+{
+  "myApp": {
+    "javascripts": {
+      "root": "web/js", // Path from project root to JS files
+      "webRoot": "web", // Path from project root to web root (for absolute file paths)
+      "buildRoot": "web/js/build", // Path from project root to where built assets should be placed (folder will be erased every compile!)
+      "packages": {
+        "app": {
+          "angularTemplates": true,
+          "files": []
+        },
+        "ie8": {
+          "condition": "lte IE 8",
+          "minify": false,
+          "files": []
+        }
+      }
+    },
+    "stylesheets": {
+      "root": "web/css", // Path from project root to CSS files
+      "webRoot": "web", // Path from project root to web root (for absolute file paths)
+      "buildRoot": "web/css/build", // Path from project root to where built assets should be placed (folder will be erased every compile!)
+      "packages": {
+        "app": {
+          "files": []
+        },
+        "ie8": {
+          "condition": "lte IE 8",
+          "files": []
+        }
+      }
+    },
+    "routing": {
+
+    }
+  }
+}
