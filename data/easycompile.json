@@ -7,10 +7,12 @@
       "packages": {
         "app": {
           "angularTemplates": true,
+          "extensions": "js coffee",
           "files": []
         },
         "ie8": {
           "condition": "lte IE 8",
+          "extensions": "js",
           "minify": false,
           "files": []
         }
@@ -22,10 +24,13 @@
       "buildRoot": "web/css/build", // Path from project root to where built assets should be placed (folder will be erased every compile!)
       "packages": {
         "app": {
+          "extensions": "css less",
           "files": []
         },
         "ie8": {
           "condition": "lte IE 8",
+          "extensions": "css",
+          "minify": false,
           "files": []
         }
       }
