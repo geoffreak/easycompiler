@@ -1,7 +1,8 @@
-
+path = require 'path'
 
 class module.exports
 
-  @compile: (config, callback) ->
-    console.log 'js compiler', config
-    callback null, config
+  @compile: (pack, files, options) ->
+    console.log 'js compiler'
+    console.log pack, files, options
+    files

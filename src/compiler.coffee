@@ -1,169 +1,130 @@
-fs    = require 'fs-plus'
+fs    = require 'co-fs-plus'
 debug = require('debug')('compiler')
-async = require 'async'
+_     = require 'lodash'
+path  = require 'path'
 JS    = require './compilers/js'
 CSS   = require './compilers/css'
 Route = require './compilers/route'
-_     = require 'lodash'
-
-# Magic async object mapper override
-async.objectMap = (obj, func, cb) ->
-  arr = []
-  keys = Object.keys(obj)
-  i = 0
-  while i < keys.length
-    wrapper = {}
-    wrapper[keys[i]] = obj[keys[i]]
-    arr[i] = wrapper
-    i += 1
-  @map arr, (item, callback) =>
-    return func key, value, callback for key, value of item
-  , (err, data) =>
-    return cb(err)  if err
-    res = {}
-    i = 0
-    while i < data.length
-      res[keys[i]] = data[i]
-      i += 1
-    cb err, res
-
 
 class module.exports 
 
-  @run: (config, runCallback) ->
+  @run: (config) ->
 
-    async.waterfall [
+    # Iterate over each app
+    for app, appConfig of config
+      config[app] = yield @runApp app, appConfig
+
+    config
+
+  @runApp: (app, config) ->
+
+    # Clear build roots
+    yield fs.rimraf config.javascripts.buildRoot if config?.javascripts?.buildRoot?
+    yield fs.rimraf config.stylesheets.buildRoot if config?.stylesheets?.buildRoot?
+
+    # Compile JavaScript (and angular templates)
+    if config?.javascripts?.packages
       
-      # # Read any existing config
-      # read = (callback) =>
-      #   fs.readFile 'easycompile.json', JSON.stringify(data), callback
+      # Iterate over each package
+      for pack, packConfig of config.javascripts.packages
 
-      # Run 
-      compile = (callback) =>
+        # Setup options
+        options = _.extend _.omit(config.javascripts, 'packages'), _.omit(packConfig, 'files', 'extensions')
 
-        # Iterate over each application
-        async.objectMap config, (app, config, callback) =>
+        # Gather the files
+        files = yield @loadFiles config.javascripts.root, packConfig.files, (packConfig.extensions or 'js')
 
-          # Run each application through the compiler
-          @runApp app, config, callback
-
-        , (err, config) =>
-          callback err, config
+        # Compile to CSS any non-CSS files
+        files = @buildNonNativeFiles files, options, 'js'
         
-      # # Write output
-      # write = (config, callback) =>
-      #   fs.writeFile '.easyc/output.json', JSON.stringify(config), callback
+        # Run the compiler
+        config.javascripts.packages[pack] = yield JS.compile pack, files, options
 
-    ], (err, result) =>
-      console.error err if err
-      console.log result
+    # Compile CSS
+    if config?.stylesheets?.packages
+      
+      # Iterate over each package
+      for pack, packConfig of config.stylesheets.packages
 
-  @runApp: (app, config, callback) ->
-    async.parallel
+        # Setup options
+        options = _.extend _.omit(config.stylesheets, 'packages'), _.omit(packConfig, 'files', 'extensions')
 
-      # Compile JavaScript (and angular templates)
-      js: (callback) =>
-        return callback() unless config?.javascripts?.packages
+        # Gather the files
+        files = yield @loadFiles config.stylesheets.root, packConfig.files, (packConfig.extensions or 'css')
 
-        # Iterate over each package
-        async.objectMap config.javascripts.packages, (pack, packConfig, callback) =>
-          
-          async.waterfall [
+        # Compile to CSS any non-CSS files
+        files = @buildNonNativeFiles files, options, 'css'
+        
+        # Run the compiler
+        config.stylesheets.packages[pack] = yield CSS.compile pack, files, options
 
-            # Load the requested files
-            loadFiles = (callback) =>
-              @loadFiles config.root, packConfig.javascripts, (pack.extensions or 'js'), callback
+    # Gather angular routing
+    if config?.routing
+      config.routing = yield Route.compile config.routing
 
-            # Run the JS compiler
-            runCompiler = (files, callback) =>
-              packConfig.files = files
-              JS.compile packConfig, callback
+    # Return adjusted config
+    config
 
-          ], (err, data) =>
-            callback err, data
-
-        , (err, packages) =>
-          callback err, packages
-
-      # Compile CSS
-      css: (callback) =>
-        return callback() unless config?.stylesheets?.packages
-
-        # Iterate over each package
-        async.objectMap config.stylesheets.packages, (pack, packConfig, callback) =>
-          
-          async.waterfall [
-
-            # Load the requested files
-            loadFiles = (callback) =>
-              @loadFiles config.root, packConfig.stylesheets, (pack.extensions or 'css'), callback
-
-            # Run the CSS compiler
-            runCompiler = (files, callback) =>
-              packConfig.files = files
-              CSS.compile packConfig, callback
-
-          ], (err, data) =>
-            callback err, data
-
-        , (err, packages) =>
-          callback err, packages
-
-      # Gather angular routing
-      routes: (callback) =>
-        return callback() unless config.routing
-        Route.compile config.routing, callback
-
-    , (err, results) =>
-      # Forward results to next step
-      callback err, results
-
-  @loadFiles: (root, rules, extensions, callback) ->
-    return callback null, [] unless rules and root
+  @loadFiles: (root, rules, extensions) ->
+    return [] unless rules and root
 
     files = []
     extensions = extensions.split ' '
 
     # Get list of files
-    fs.traverseTree root, (file) => 
-      files.push file # Push the file into the list of files
-    , (dir) => 
-      true # Continue on directories
-    , (err) =>
-      return callback err if err
+    files = yield fs.readdir root, null, []
 
-      # Translate rules to regex
-      includes = []
-      excludes = []
-      for rule in rules
-        isExclude = false
-        if rule.indexOf('-') is 0
-          isExclude = true
-          rule = rule.substr(1)
+    # Translate rules to regex
+    includes = []
+    excludes = []
+    for rule in rules
+      isExclude = false
+      if rule.indexOf('-') is 0
+        isExclude = true
+        rule = rule.substr(1)
 
-        rule = rule.replace /\*/g, '.*?'
-        rule = new RegExp "^#{rule}$", 'i'
+      rule = rule.replace /\*/g, '.*?'
+      rule = new RegExp "^#{rule}$", 'i'
 
-        if isExclude
-          excludes.push rule
-        else
-          includes.push rule
+      if isExclude
+        excludes.push rule
+      else
+        includes.push rule
 
-      # Filter files
-      files = _.chain files
-        .filter (file) => path.extname(file) in extensions # Verify extension
-        .map (file) => path.relative root, file # Turn into relative path
-        .filter (file) => # Filter out unwanted files
-          for exclude in excludes
-            return false if exclude.test file
-          true
-        .value()
+    # Filter files
+    files = _.chain files
+      .filter (file) => path.extname(file).substr(1) in extensions # Verify extension
+      .map (file) => path.relative root, file # Turn into relative path
+      .filter (file) => # Filter out unwanted files
+        for exclude in excludes
+          return false if exclude.test file
+        true
+      .value()
 
-      # Filter and order includes
-      filtered = []
-      for include in includes
-        _.each files, (file) => 
-          if include.test(file) and not _.contains filtered, file
-            filtered.push file
-      
-      callback null, filtered
+    # Filter and order includes
+    filtered = []
+    for include in includes
+      _.each files, (file) => 
+        if include.test(file) and not _.contains filtered, file
+          filtered.push file
+    
+    filtered
+
+  @buildNonNativeFiles: (files, options, nativeType) ->
+
+    builtFiles = []
+
+    # Compile any files needing compiling
+    for file, f in files 
+      ext = path.extname(file).substr(1)
+      if ext isnt nativeType
+        try 
+          compiler = require "./compilers/#{ext}"
+          throw new Error() unless compiler.compilesTo is nativeType
+        catch e then throw new Error "Unsupported file type #{ext}\n#{e.message}"
+
+        builtFiles.push yield compiler.compile file, options
+      else
+        builtFiles.push file
+
+    builtFiles

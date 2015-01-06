@@ -2,6 +2,7 @@
 
 class module.exports
 
-  @compile: (config, callback) ->
-    console.log 'css compiler', config
-    callback null, config
+  @compile: (pack, files, options) ->
+    console.log 'css compiler'
+    console.log pack, files, options
+    files

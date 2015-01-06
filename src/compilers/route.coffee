@@ -2,6 +2,6 @@
 
 class module.exports
 
-  @compile: (config, callback) ->
+  @compile: (config) ->
     console.log 'route compiler', config
-    callback null, config
+    config
