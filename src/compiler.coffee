@@ -10,11 +10,13 @@ class module.exports
 
   @run: (config) ->
 
+    results = {}
+
     # Iterate over each app
     for app, appConfig of config
-      config[app] = yield @runApp app, appConfig
+      results[app] = yield @runApp app, appConfig
 
-    config
+    results
 
   @runApp: (app, config) ->
 
@@ -35,10 +37,11 @@ class module.exports
         files = yield @loadFiles config.javascripts.root, packConfig.files, (packConfig.extensions or 'js')
 
         # Compile to CSS any non-CSS files
-        files = @buildNonNativeFiles files, options, 'js'
+        files = yield @buildNonNativeFiles "#{app}.#{pack}", files, options, 'js'
         
         # Run the compiler
-        config.javascripts.packages[pack] = yield JS.compile pack, files, options
+        config.javascripts.packages[pack] = yield JS.compile "#{app}.#{pack}", files, options
+        # console.log config.javascripts.packages[pack]
 
     # Compile CSS
     if config?.stylesheets?.packages
@@ -53,10 +56,10 @@ class module.exports
         files = yield @loadFiles config.stylesheets.root, packConfig.files, (packConfig.extensions or 'css')
 
         # Compile to CSS any non-CSS files
-        files = @buildNonNativeFiles files, options, 'css'
+        files = yield @buildNonNativeFiles "#{app}.#{pack}", files, options, 'css'
         
         # Run the compiler
-        config.stylesheets.packages[pack] = yield CSS.compile pack, files, options
+        config.stylesheets.packages[pack] = yield CSS.compile "#{app}.#{pack}", files, options
 
     # Gather angular routing
     if config?.routing
@@ -110,7 +113,7 @@ class module.exports
     
     filtered
 
-  @buildNonNativeFiles: (files, options, nativeType) ->
+  @buildNonNativeFiles: (pack, files, options, nativeType) ->
 
     builtFiles = []
 
@@ -123,7 +126,7 @@ class module.exports
           throw new Error() unless compiler.compilesTo is nativeType
         catch e then throw new Error "Unsupported file type #{ext}\n#{e.message}"
 
-        builtFiles.push yield compiler.compile file, options
+        builtFiles.push yield compiler.compile pack, file, options
       else
         builtFiles.push file
 

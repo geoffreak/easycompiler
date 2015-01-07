@@ -6,10 +6,10 @@ class module.exports
 
   @compilesTo: 'js'
 
-  @compile: (input, options) ->
+  @compile: (pack, input, options) ->
 
     # Make paths
-    output    = path.resolve(options.buildRoot, input) + '.js'
+    output    = path.resolve(options.buildRoot, pack, input) + '.js'
     input     = path.resolve options.root, input
     outputWeb = path.relative options.webRoot, output
     inputWeb  = path.relative options.webRoot, input
@@ -26,8 +26,7 @@ class module.exports
         sourceFiles: [ "/#{inputWeb}" ]
         filename: input
     catch e
-      console.error e.stack
-      process.exit 1
+      throw e
 
     compiled.js += "\n//# sourceMappingURL=#{path.basename outputWeb}.map"
 
