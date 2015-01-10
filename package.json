@@ -3,7 +3,7 @@
   "author": "Joshua Devinney <admin@geoffreak.com>",
   "version": "0.0.1",
   "description": "Simple to use frontend asset builder",
-  "main": "./lib/compiler",
+  "main": "./lib/easyc",
   "engines": {
     "node": ">= 0.11.11"
   },
@@ -21,6 +21,13 @@
     "lodash": "~2.4.1",
     "clean-css": "~2.2.15",
     "async-replace": "~1.0.0",
-    "html-minifier": "~0.6.9"
-  }
+    "html-minifier": "~0.6.9",
+    "minimist": "~1.1.0"
+  },
+  "license": "MIT",
+  "readmeFilename": "Readme.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/geoffreak/easy-compiler.git"
+  },
 }

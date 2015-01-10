@@ -2,6 +2,11 @@
 
 var path = require('path');
 var fs   = require('fs');
+var co   = require('co');
 var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib');
 
-require(lib + '/command').run();
+var command = require(lib + '/command')
+
+co(function(){
+  yield command.run();
+})();

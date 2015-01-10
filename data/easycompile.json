@@ -1,12 +1,14 @@
 {
+  // Specify each application to build by placing it at the root level
+  // Each app will be organized in its own build subfolder
   "myApp": {
-    "javascripts": {
+    "javascripts": { // JavaScript assets
       "root": "web/js", // Path from project root to JS files
       "webRoot": "web", // Path from project root to web root (for absolute file paths)
       "buildRoot": "web/js/build", // Path from project root to where built assets should be placed (folder will be erased every compile!)
-      "packages": {
+      "packages": { // Each package results in a file when in production mode
         "app": {
-          "angularTemplates": true,
+          "angularTemplates": "app",
           "extensions": "js coffee",
           "files": []
         },

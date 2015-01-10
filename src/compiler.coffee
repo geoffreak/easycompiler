@@ -16,6 +16,9 @@ class module.exports
     for app, appConfig of config
       results[app] = yield @runApp app, appConfig
 
+    # Write out data
+    yield fs.writeFile '.easyc/data.json', JSON.stringify results
+
     results
 
   @runApp: (app, config) ->
