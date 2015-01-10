@@ -7,6 +7,6 @@ var lib  = path.join(path.dirname(fs.realpathSync(__filename)), '../lib');
 
 var command = require(lib + '/command')
 
-co(function(){
+co(function*(){
   yield command.run();
 })();

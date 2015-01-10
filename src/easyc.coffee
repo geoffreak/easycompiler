@@ -6,12 +6,20 @@ util     = require 'util'
 class module.exports
 
   @compile: ->
-    yield Compiler.run()
+    # Read in config
+    config = JSON.parse yield fs.readFile 'easycompile.json', 'utf-8'
+
+    # Run compiler
+    results = yield Compiler.run config
+
+    # Write out data
+    yield fs.mkdirp '.easyc/'
+    yield fs.writeFile '.easyc/data.json', JSON.stringify results, null, 2
 
   @load: ->
     unless @_cache
       try
-        @_cache = yield fs.loadFile '.easyc/data.json'
+        @_cache = yield fs.readFile '.easyc/data.json'
       catch e
         @_cache = yield @compile()
     @_cache

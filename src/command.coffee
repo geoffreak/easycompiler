@@ -1,6 +1,6 @@
-Compiler = require './compiler'
+easyc = require './easyc'
 
 class module.exports
 
   @run: ->
-    yield Compiler.run()
+    yield easyc.compile()

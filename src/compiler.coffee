@@ -12,20 +12,20 @@ class module.exports
 
     results = {}
 
-    # Iterate over each app
+    # Iterate over each app to clear build roots
+    for app, appConfig of config
+      yield fs.rimraf config.javascripts.buildRoot if config?.javascripts?.buildRoot?
+      yield fs.rimraf config.stylesheets.buildRoot if config?.stylesheets?.buildRoot?
+
+    # Iterate over each app to build
     for app, appConfig of config
       results[app] = yield @runApp app, appConfig
 
-    # Write out data
-    yield fs.writeFile '.easyc/data.json', JSON.stringify results
+    console.log results
 
     results
 
   @runApp: (app, config) ->
-
-    # Clear build roots
-    yield fs.rimraf config.javascripts.buildRoot if config?.javascripts?.buildRoot?
-    yield fs.rimraf config.stylesheets.buildRoot if config?.stylesheets?.buildRoot?
 
     # Compile JavaScript (and angular templates)
     if config?.javascripts?.packages
