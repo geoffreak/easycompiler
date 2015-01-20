@@ -3,7 +3,7 @@
   "author": "Joshua Devinney <admin@geoffreak.com>",
   "version": "0.0.1",
   "description": "Simple to use frontend asset builder",
-  "main": "./lib/easyc",
+  "main": "./lib/easyc.js",
   "engines": {
     "node": ">= 0.11.11"
   },
@@ -29,5 +29,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/geoffreak/easy-compiler.git"
-  },
+  }
 }

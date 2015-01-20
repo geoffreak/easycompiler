@@ -19,27 +19,39 @@ class module.exports
   @load: ->
     unless @_cache
       try
-        @_cache = yield fs.readFile '.easyc/data.json'
+        @_cache = JSON.parse yield fs.readFile '.easyc/data.json', 'utf-8'
       catch e
         @_cache = yield @compile()
     @_cache
 
+  @setProduction: (@_production = true) ->
+
+  @getEnv: ->
+    if @_production then 'prod' else 'dev'
+
   @getJavascripts: (app, packs) ->
     config = yield @load()
 
-    packs = [packs] unless util.isArray packs
+    return [] unless config?[app]?.javascripts?
 
-    if packs
-      _.flatten(config?[app]?.javascripts.packs?[pack] or [] for pack in packs)
-    else
-      _.flatten config?[app]?.javascripts.packs or []
+    unless util.isArray packs
+      if typeof packs is 'string'
+        packs = [packs]
+      else
+        packs = Object.keys config[app].javascripts
+
+    _.flatten(config[app].javascripts[pack]?[@getEnv()] or [] for pack in packs)
+    
 
   @getStylesheets: (app, packs) ->
     config = yield @load()
 
-    packs = [packs] unless util.isArray packs
+    return [] unless config?[app]?.stylesheets?
 
-    if packs
-      _.flatten(config?[app]?.stylesheets.packs?[pack] or [] for pack in packs)
-    else
-      _.flatten config?[app]?.stylesheets.packs or []
+    unless util.isArray packs
+      if typeof packs is 'string'
+        packs = [packs]
+      else
+        packs = Object.keys config[app].stylesheets
+
+    _.flatten(config[app].stylesheets[pack]?[@getEnv()] or [] for pack in packs)

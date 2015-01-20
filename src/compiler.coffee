@@ -21,11 +21,13 @@ class module.exports
     for app, appConfig of config
       results[app] = yield @runApp app, appConfig
 
-    console.log results
-
     results
 
   @runApp: (app, config) ->
+
+    result = 
+      javascripts: {}
+      stylesheets: {}
 
     # Compile JavaScript (and angular templates)
     if config?.javascripts?.packages
@@ -43,7 +45,7 @@ class module.exports
         files = yield @buildNonNativeFiles "#{app}/#{pack}", files, options, 'js'
         
         # Run the compiler
-        config.javascripts.packages[pack] = yield JS.compile "#{app}/#{pack}", files, options
+        result.javascripts[pack] = yield JS.compile "#{app}/#{pack}", files, options
         # console.log config.javascripts.packages[pack]
 
     # Compile CSS
@@ -62,14 +64,14 @@ class module.exports
         files = yield @buildNonNativeFiles "#{app}/#{pack}", files, options, 'css'
         
         # Run the compiler
-        config.stylesheets.packages[pack] = yield CSS.compile "#{app}/#{pack}", files, options
+        result.stylesheets[pack] = yield CSS.compile "#{app}/#{pack}", files, options
 
     # Gather angular routing
     if config?.routing
-      config.routing = yield Route.compile config.routing
+      result.routing = yield Route.compile config.routing
 
     # Return adjusted config
-    config
+    result
 
   @loadFiles: (root, rules, extensions) ->
     return [] unless rules and root
