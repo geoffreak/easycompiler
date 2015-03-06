@@ -1,6 +1,7 @@
 fs     = require 'co-fs-plus'
 path   = require 'path'
 minify = require('html-minifier').minify
+debug  = require('debug')('compiler:template')
 
 regex  = /templateUrl:[\s]*?("([^"\\]*(\\.[^"\\]*)*)"|\'([^\'\\]*(\\.[^\'\\]*)*)\')/i
 regexg = /templateUrl:[\s]*?("([^"\\]*(\\.[^"\\]*)*)"|\'([^\'\\]*(\\.[^\'\\]*)*)\')/gi
@@ -27,6 +28,7 @@ class module.exports
         @addTemplateToCache match, template
 
   addTemplateToCache: (file, template) ->
+    # debug "Adding template to cache: #{file}"
     @cache[file] = minify template,
       removeComments:     true
       collapseWhitespace: true
@@ -35,6 +37,7 @@ class module.exports
   hasTemplates: -> @templateCount > 0
     
   writeCache: ->
+    debug "Writing template cache"
     output = path.resolve @config.buildRoot, "#{@pack}.cache.js"
 
     content = """

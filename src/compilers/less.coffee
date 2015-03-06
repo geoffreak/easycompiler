@@ -2,6 +2,7 @@ fs     = require 'co-fs-plus'
 path   = require 'path'
 less   = require 'less'
 Q      = require 'q'
+debug  = require('debug')('compiler:less')
 render = Q.nbind less.render, less
 
 class module.exports
@@ -9,6 +10,7 @@ class module.exports
   @compilesTo: 'css'
 
   @compile: (pack, input, options) ->
+    # debug "Compiling LESS for '#{pack}': #{input}"
 
     # Make paths
     output    = path.resolve(options.buildRoot, pack, input) + '.css'
@@ -50,6 +52,6 @@ class module.exports
     
     # Write compiled file
     yield fs.writeFile output, compiled
-
+    
     # Format paths in the same fashion as getFiles (based from root)
     path.relative options.root, output

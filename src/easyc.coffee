@@ -5,12 +5,12 @@ util     = require 'util'
 
 class module.exports
 
-  @compile: ->
+  @compile: (options) ->
     # Read in config
     config = JSON.parse yield fs.readFile 'easycompile.json', 'utf-8'
 
     # Run compiler
-    results = yield Compiler.run config
+    results = yield Compiler.run config, options
 
     # Write out data
     yield fs.mkdirp '.easyc/'

@@ -1,12 +1,14 @@
 fs     = require 'co-fs-plus'
 path   = require 'path'
 coffee = require 'coffee-script'
+debug  = require('debug')('compiler:coffee')
 
 class module.exports
 
   @compilesTo: 'js'
 
   @compile: (pack, input, options) ->
+    # debug "Compiling CoffeeScript for '#{pack}': #{input}"
 
     # Make paths
     output    = path.resolve(options.buildRoot, pack, input) + '.js'
