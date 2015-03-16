@@ -35,6 +35,12 @@ class module.exports
     @templateCount++
 
   hasTemplates: -> @templateCount > 0
+
+  getTemplatesList: ->
+    list = []
+    for file of @cache
+      list.push file
+    list
     
   writeCache: ->
     debug "Writing template cache"

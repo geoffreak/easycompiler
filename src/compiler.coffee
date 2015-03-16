@@ -5,27 +5,11 @@ path  = require 'path'
 JS    = require './compilers/js'
 CSS   = require './compilers/css'
 Route = require './compilers/route'
-watch = require 'watch'
 co    = require 'co'
 
 class module.exports 
 
-  @run: (config, options) ->
-
-    results = {}
-    running = false
-
-    run = (config) =>
-      return if running
-      debug 'Running compiler'
-
-      running = true
-      # Iterate over each app to build
-      for app, appConfig of config
-        results[app] = yield @runApp app, appConfig
-      running = false
-
-      debug 'Compiler finished'
+  @run: (config, options, previousResults) ->
 
     if options?.clearBuildDirs
       debug 'Clearing build directories'
@@ -45,41 +29,21 @@ class module.exports
           for pack, packConfig of appConfig.stylesheets.packages
             packConfig.skipMinify = true
 
-    yield run config
+    debug 'Running compiler'
 
-    if options?.watch
-      debug 'Starting watch process'
-      for app, appConfig of config
-        watch.watchTree (path.resolve process.cwd(), appConfig.javascripts.root), (filename) => 
-          do co =>
-            return unless typeof filename is 'string'
-            filename = path.relative process.cwd(), filename
-            contained = false
-            for pack, packConfig of appConfig.javascripts.packages
-              files = yield @loadFiles appConfig.javascripts.root, packConfig.files, (packConfig.extensions or 'js')
-              if -1 isnt _.indexOf files, path.relative appConfig.javascripts.root, filename
-                contained = true 
-                break
-            return unless contained
-            debug "File change: #{filename}"
-            mapped = _.mapValues config, (value, key) -> _.pick value, 'javascripts'
-            yield run mapped
-        watch.watchTree (path.resolve process.cwd(), appConfig.stylesheets.root), (filename) => 
-          do co =>
-            return unless typeof filename is 'string'
-            filename = path.relative process.cwd(), filename
-            contained = false
-            for pack, packConfig of appConfig.stylesheets.packages
-              files = yield @loadFiles appConfig.stylesheets.root, packConfig.files, (packConfig.extensions or 'css')
-              if -1 isnt _.indexOf files, path.relative appConfig.stylesheets.root, filename
-                contained = true 
-                break
-            return unless contained
-            debug "File change: #{filename}"
-            mapped = _.mapValues config, (value, key) -> _.pick value, 'stylesheets'
-            yield run mapped
+    results = previousResults or {}
 
-    results
+    # Iterate over each app to build
+    for app, appConfig of config when not options?.onlyApp? or app is options.onlyApp
+      results[app] = yield @runApp app, appConfig
+    running = false
+
+    # Run compiler
+    # results = yield @runApp config, options
+
+    debug 'Compiler finished'
+
+    yield results
 
   @runApp: (app, config) ->
 
@@ -142,14 +106,13 @@ class module.exports
     if config?.routing
       result.routing = yield Route.compile config.routing
 
-  @loadFiles: (root, rules, extensions) ->
+  @loadFiles: (root, rules, extensions, files) ->
     return [] unless rules and root
 
-    files = []
     extensions = extensions.split ' '
 
     # Get list of files
-    files = yield fs.readdir root, null, []
+    files ?= yield fs.readdir root, null, []
 
     # Translate rules to regex
     includes = []

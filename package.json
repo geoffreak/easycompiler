@@ -20,7 +20,7 @@
     "html-minifier": "~0.6.9",
     "less": "~1.7.5",
     "lodash": "~2.4.1",
-    "minimist": "~1.1.0",
+    "minimist": "^1.1.1",
     "q": "~1.0",
     "uglify-js": "~2.4.15",
     "watch": "^0.14.0"

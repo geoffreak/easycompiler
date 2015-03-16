@@ -59,5 +59,6 @@ class module.exports
 
     # Package results
     results =
-      dev:  webFiles
-      prod: minifiedFiles
+      dev:       webFiles
+      prod:      minifiedFiles
+      templates: if options.angularTemplates? then tc.getTemplatesList()

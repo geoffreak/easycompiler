@@ -2,19 +2,22 @@ fs       = require 'co-fs-plus'
 Compiler = require './compiler'
 _        = require 'lodash'
 util     = require 'util'
+exec     = require('child_process').exec
 
 class module.exports
 
   @compile: (options) ->
     # Read in config
     config = JSON.parse yield fs.readFile 'easycompile.json', 'utf-8'
+    try previousResults = JSON.parse yield fs.readFile '.easyc/data.json', 'utf-8'
 
     # Run compiler
-    results = yield Compiler.run config, options
+    results = yield Compiler.run config, options, previousResults
 
     # Write out data
     yield fs.mkdirp '.easyc/'
     yield fs.writeFile '.easyc/data.json', JSON.stringify results, null, 2
+
 
   @load: ->
     unless @_cache
