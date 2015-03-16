@@ -1,12 +1,12 @@
 path     = require 'path'
 fs       = require 'fs'
 cofs     = require 'co-fs-plus'
-watch    = require 'watch'
 child    = require 'child_process'
 _        = require 'lodash'
 debug    = require('debug')('compiler:watch')
 co       = require 'co'
 compiler = require './compiler'
+chokidar = require 'chokidar'
 
 class Watch
 
@@ -66,7 +66,7 @@ class Watch
 
   @_watchTree: (config, app, appConfig, type) ->
     root = path.resolve process.cwd(), appConfig[type].root
-    watch.watchTree root, (filename) => 
+    watchFn = (filename) => 
       fn = =>
         try
           return unless typeof filename is 'string'
@@ -83,7 +83,15 @@ class Watch
         catch e
           console.error e.stack
       co(fn)()
-    unwatch = -> watch.unwatchTree root
+    fswatcher = chokidar.watch root
+    ready = false
+    fswatcher.on 'all', (event, file) -> 
+      return if event is 'add' and not ready
+      watchFn file
+    fswatcher.on 'ready', (args...) ->
+      ready = true
+    unwatch = -> 
+      fswatcher.close()
 
 process.on 'exit', ->
   Watch.abort()

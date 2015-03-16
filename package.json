@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "async-replace": "~1.0.0",
+    "chokidar": "^1.0.0-rc4",
     "clean-css": "~2.2.15",
     "co": "3.0.4",
     "co-fs-plus": "~0.3.1",
@@ -22,8 +23,7 @@
     "lodash": "~2.4.1",
     "minimist": "^1.1.1",
     "q": "~1.0",
-    "uglify-js": "~2.4.15",
-    "watch": "^0.14.0"
+    "uglify-js": "~2.4.15"
   },
   "license": "MIT",
   "readmeFilename": "Readme.md",
