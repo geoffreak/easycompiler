@@ -9,7 +9,7 @@ render    = Q.nbind less.render, less
 
 class module.exports
 
-  @compile: (pack, files, options) ->
+  @compile: (pack, files, options, deps) ->
     debug "Compiling CSS for '#{pack}'"
     
     # Map all files to full system paths
@@ -52,5 +52,6 @@ class module.exports
 
     # Package results
     results =
-      dev: webFiles
+      dev:  webFiles
       prod: minifiedFiles
+      deps: deps

@@ -6,6 +6,7 @@ JS    = require './compilers/js'
 CSS   = require './compilers/css'
 Route = require './compilers/route'
 co    = require 'co'
+Deps  = require './dependencies'
 
 class module.exports 
 
@@ -76,10 +77,10 @@ class module.exports
         files = yield @loadFiles config.javascripts.root, packConfig.files, (packConfig.extensions or 'js')
 
         # Compile to CSS any non-CSS files
-        files = yield @buildNonNativeFiles "#{app}/#{pack}", files, options, 'js'
+        [files, deps] = yield @buildNonNativeFiles "#{app}/#{pack}", files, options, 'js'
         
         # Run the compiler
-        result.javascripts[pack] = yield JS.compile "#{app}/#{pack}", files, options
+        result.javascripts[pack] = yield JS.compile "#{app}/#{pack}", files, options, deps
         # console.log config.javascripts.packages[pack]
 
   @runAppCss: (app, config, result) ->
@@ -96,10 +97,10 @@ class module.exports
         files = yield @loadFiles config.stylesheets.root, packConfig.files, (packConfig.extensions or 'css')
 
         # Compile to CSS any non-CSS files
-        files = yield @buildNonNativeFiles "#{app}/#{pack}", files, options, 'css'
+        [files, deps] = yield @buildNonNativeFiles "#{app}/#{pack}", files, options, 'css'
         
         # Run the compiler
-        result.stylesheets[pack] = yield CSS.compile "#{app}/#{pack}", files, options
+        result.stylesheets[pack] = yield CSS.compile "#{app}/#{pack}", files, options, deps
 
   @runAppRouting: (app, config, result) ->
     # Gather angular routing
@@ -152,6 +153,7 @@ class module.exports
 
   @buildNonNativeFiles: (pack, files, options, nativeType) ->
 
+    deps = new Deps()
     builtFiles = []
 
     # Compile any files needing compiling
@@ -165,8 +167,8 @@ class module.exports
         catch e then throw new Error "Unsupported file type #{ext}\n#{e.message}"
 
         # Build this file into js or css
-        builtFiles.push yield compiler.compile pack, file, options
+        builtFiles.push yield compiler.compile pack, file, options, deps
       else
         builtFiles.push file
 
-    builtFiles
+    [builtFiles, deps]

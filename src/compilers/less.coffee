@@ -4,12 +4,14 @@ less   = require 'less'
 Q      = require 'q'
 debug  = require('debug')('compiler:less')
 render = Q.nbind less.render, less
+co     = require 'co'
+_      = require 'lodash'
 
 class module.exports
 
   @compilesTo: 'css'
 
-  @compile: (pack, input, options) ->
+  @compile: (pack, input, options, deps) ->
     # debug "Compiling LESS for '#{pack}': #{input}"
 
     # Make paths
@@ -23,6 +25,8 @@ class module.exports
 
     # Ensure output exists
     yield fs.mkdirp path.dirname output
+
+    sourceMapDefer = Q.defer()
 
     # Compile less
     try
@@ -41,7 +45,14 @@ class module.exports
         writeSourceMap: (map) -> 
           # Write map
           map = JSON.parse map
-          fs.writeFile "#{output}.map", JSON.stringify map
+          sources = _.slice map.sources, 0, map.sources.length - 1
+          deps.add _.map sources, (file) -> options.webRoot + file
+          do co ->
+            try
+              yield fs.writeFile "#{output}.map", JSON.stringify map
+              sourceMapDefer.resolve()
+            catch e
+              sourceMapDefer.reject e
     catch e
       throw new Error """
         LESS Compile Error
@@ -52,6 +63,9 @@ class module.exports
     
     # Write compiled file
     yield fs.writeFile output, compiled
+
+    # Wait on written sourcemap
+    yield sourceMapDefer.promise
     
     # Format paths in the same fashion as getFiles (based from root)
     path.relative options.root, output

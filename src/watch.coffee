@@ -84,13 +84,15 @@ class Watch
     try results = JSON.parse yield cofs.readFile '.easyc/data.json', 'utf-8'
     for _app, appConfig of results when not app? or app is _app
       for _pack, packConfig of appConfig.javascripts when not pack? or pack is _pack
-        @_watch _app, _pack, _.map(packConfig.templates, (file) => @config[_app]['javascripts'].webRoot + file) if packConfig.templates?.length
+        @_watch _app, _pack, 'javascripts', packConfig.deps if packConfig.deps?
+      for _pack, packConfig of appConfig.stylesheets when not pack? or pack is _pack
+        @_watch _app, _pack, 'stylesheets', packConfig.deps if packConfig.deps?
 
   @_fileWatches: []
-  @_watch: (app, pack, files) ->
-    debug 'template watching', app, pack
+  @_watch: (app, pack, type, files) ->
+    debug "#{type} dependency watching", app, pack
     _.each @_fileWatches, (watch) -> 
-      watch.unwatch() if watch.app is app and watch.pack is pack
+      watch.unwatch() if watch.app is app and watch.pack is pack and type is type
     fswatcher = chokidar.watch files
     ready = false
     fswatcher.on 'all', (event, file) => 
@@ -106,6 +108,7 @@ class Watch
       unwatch: unwatch
       app:     app
       pack:    pack
+      type:    type
     @_fileWatches.push watch
 
   @_configWatches: []

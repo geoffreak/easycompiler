@@ -8,7 +8,7 @@ debug    = require('debug')('compiler:js')
 
 class module.exports
 
-  @compile: (pack, files, options) ->
+  @compile: (pack, files, options, deps) ->
     debug "Compiling JavaScript for '#{pack}'"
     
     # Map all files to full system paths
@@ -26,6 +26,7 @@ class module.exports
 
       if tc.hasTemplates()
         files.push yield tc.writeCache()
+        deps.add _.map tc.getTemplatesList(), (file) -> options.webRoot + file
 
     # Combine JavaScript for prod
     minifiedFiles = []
@@ -59,6 +60,6 @@ class module.exports
 
     # Package results
     results =
-      dev:       webFiles
-      prod:      minifiedFiles
-      templates: if options.angularTemplates? then tc.getTemplatesList()
+      dev:  webFiles
+      prod: minifiedFiles
+      deps: deps
