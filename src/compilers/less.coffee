@@ -45,7 +45,7 @@ class module.exports
         writeSourceMap: (map) -> 
           # Write map
           map = JSON.parse map
-          sources = _.slice map.sources, 0, map.sources.length - 1
+          sources = _.pull map.sources, '/' + inputWeb
           deps.add _.map sources, (file) -> options.webRoot + file
           do co ->
             try
