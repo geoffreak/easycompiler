@@ -49,7 +49,7 @@ class Watch
     fs.watch path.relative(process.cwd(), 'easycompile.json'), =>
       debug 'Config change'
       @abort()
-      _.each @_configWatches, (watch) -> watch.unwatch()
+      _.each @_configWatches, (unwatch) -> unwatch()
       _.each @_fileWatches, (watch) -> watch.unwatch()
       do co => yield @watch()
     @_watchingConfig = true
@@ -95,16 +95,18 @@ class Watch
     ready = false
     fswatcher.on 'all', (event, file) => 
       return if event is 'add' and not ready
+      debug "File change: #{file}"
       @_startCompile app, pack, 'template'
     fswatcher.on 'ready', =>
       ready = true
+    unwatch = => 
+      @_fileWatches = _.without @_fileWatches, watch
+      fswatcher.close()
     watch =
       unwatch: unwatch
       app:     app
       pack:    pack
-    unwatch = => 
-      @_fileWatches = _.without @_fileWatches, watch
-      fswatcher.close()
+    @_fileWatches.push watch
 
   @_configWatches: []
   @_watchFilesInConfig: ->
