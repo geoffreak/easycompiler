@@ -92,7 +92,7 @@ class Watch
   @_watch: (app, pack, type, files) ->
     debug "#{type} dependency watching", app, pack
     _.each @_fileWatches, (watch) -> 
-      watch.unwatch() if watch.app is app and watch.pack is pack and type is type
+      watch.unwatch() if watch.app is app and watch.pack is pack and watch.type is type
     fswatcher = chokidar.watch files
     ready = false
     fswatcher.on 'all', (event, file) => 
