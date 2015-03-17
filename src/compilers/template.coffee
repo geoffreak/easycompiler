@@ -47,7 +47,7 @@ class module.exports
     output = path.resolve @config.buildRoot, "#{@pack}.cache.js"
 
     content = """
-      angular.module(#{JSON.stringify @config.angularTemplates}).run(['$templateCache', function($templateCache){
+      angular.module(#{JSON.stringify @config.angularTemplates}, []).run(['$templateCache', function($templateCache){
         #{("$templateCache.put(#{JSON.stringify(file)}, #{JSON.stringify(template)});" for file, template of @cache).join("\n  ")}
       }]);
     """
