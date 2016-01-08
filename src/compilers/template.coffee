@@ -34,13 +34,20 @@ class module.exports
         @addTemplateToCache match, template
 
         try yield @parseAndAddFromFile template, true
+      catch err
+        throw err if err?.type is 'minify'
         
 
   addTemplateToCache: (file, template) ->
     # debug "Adding template to cache: #{file}"
-    @cache[file] = minify template,
-      removeComments:     true
-      collapseWhitespace: true
+    try
+      @cache[file] = minify template,
+        removeComments:     true
+        collapseWhitespace: true
+    catch message
+      err = new Error(message)
+      err.type = 'minify'
+      throw err
     @templateCount++
 
   hasTemplates: -> @templateCount > 0
