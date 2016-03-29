@@ -38,7 +38,7 @@ class module.exports
     for app, appConfig of config when not options?.onlyApp? or app is options.onlyApp
       result = yield @runApp app, appConfig, options
       results[app] ?= {}
-      results[app][key] = value for key, value of result
+      results[app][key] = value for key, value of result when not _.isEmpty value
     running = false
 
     # Run compiler
