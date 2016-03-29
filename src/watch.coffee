@@ -80,7 +80,7 @@ class Watch
       do co => yield @_loadTemplateWatches app, pack
 
   @_loadTemplateWatches: (app, pack) ->
-    debug 'Loading template watches for ', app, pack
+    debug 'Loading watches for ', app, pack
     try results = JSON.parse yield cofs.readFile '.easyc/data.json', 'utf-8'
     for _app, appConfig of results when not app? or app is _app
       for _pack, packConfig of appConfig.javascripts when not pack? or pack is _pack
@@ -98,7 +98,7 @@ class Watch
     fswatcher.on 'all', (event, file) =>
       return if event is 'add' and not ready
       debug "File change: #{file}"
-      @_startCompile app, pack, 'template'
+      @_startCompile app, pack, type
     fswatcher.on 'ready', =>
       ready = true
     unwatch = => 
