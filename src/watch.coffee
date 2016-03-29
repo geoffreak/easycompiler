@@ -21,25 +21,23 @@ class Watch
 
     @_startCompile()
 
-  @abort: (app, pack, part) ->
-    for task in @_tasks
-      kill = false
+  @abort: (app = [], pack = [], part = []) ->
+    app  = [app]  if app?  and not _.isArray app
+    pack = [pack] if pack? and not _.isArray pack
+    part = [part] if part? and not _.isArray part
 
-      # Determine if we need to kill this task because it's the same or a subset of our upcoming new task
-      if not app? or task.app is app
-        kill = true
-        app = pack = part = null
-      else if not pack? or task.pack is pack
-        kill = true
-        pack = part = null
-      else if not part? or task.part is part
-        kill = true
-        part = null
+    for task in @_tasks
+
+      if not app.length or task.app.join(',') isnt app.join(',')
+        app = _.uniq app.concat task.app
+      if not pack.length or task.pack.join(',') isnt pack.join(',')
+        pack = _.uniq pack.concat task.pack
+      if not part.length or task.part.join(',') isnt part.join(',')
+        part = _.uniq part.concat task.part
 
       debug 'Killing task', task.app, task.pack, task.part
-      if kill
-        try task.fork.kill()
-        task.killed = true
+      try task.fork.kill()
+      task.killed = true
 
     return [app, pack, part] # Return the updated controls because we might have elevated
 
@@ -58,14 +56,12 @@ class Watch
     # app = pack = part = null # Temporary manual override until race condition with output json can get resolved
     [app, pack, part] = @abort app, pack, part
     debug "Compiling", app, pack, part
-    args = []
-    if app?
-      args.push app 
-      if pack?
-        args.push pack
-        if part?
-          args.push part
-    fork = child.fork path.resolve(__dirname, 'watchRun.js'), args, env: process.env
+    fork = child.fork path.resolve(__dirname, 'watchRun.js'), [], 
+      env: _.defaults
+        app:  app?.join(',')  or ''
+        pack: pack?.join(',') or ''
+        part: part?.join(',') or ''
+      , process.env
     task =
       fork: fork
       app:  app
@@ -82,10 +78,10 @@ class Watch
   @_loadTemplateWatches: (app, pack) ->
     debug 'Loading watches for ', app, pack
     try results = JSON.parse yield cofs.readFile '.easyc/data.json', 'utf-8'
-    for _app, appConfig of results when not app? or app is _app
-      for _pack, packConfig of appConfig.javascripts when not pack? or pack is _pack
+    for _app, appConfig of results when not app?.length or app.indexOf(_app) isnt -1
+      for _pack, packConfig of appConfig.javascripts when not pack?.length or pack.indexOf(_pack) isnt -1
         @_watch _app, _pack, 'javascripts', packConfig.deps if packConfig.deps?
-      for _pack, packConfig of appConfig.stylesheets when not pack? or pack is _pack
+      for _pack, packConfig of appConfig.stylesheets when not pack?.length or pack.indexOf(_pack) isnt -1
         @_watch _app, _pack, 'stylesheets', packConfig.deps if packConfig.deps?
 
   @_fileWatches: []
@@ -124,15 +120,15 @@ class Watch
         try
           return unless typeof filename is 'string'
           filename = path.relative process.cwd(), filename
-          contained = false
+          contained = []
           for pack, packConfig of appConfig[type].packages
             files = yield compiler.loadFiles appConfig[type].root, packConfig.files, (packConfig.extensions or (if type is 'stylesheets' then 'css' else 'js')), [filename]
             if -1 isnt _.indexOf files, path.relative appConfig[type].root, filename
-              contained = pack 
+              contained.push pack 
               break
-          return unless contained
+          return unless contained.length
           debug "File change: #{filename}"
-          @_startCompile app, contained, type
+          @_startCompile app, (if contained.length is 1 then contained[0] else null), type
         catch e
           console.error e.stack
       co(fn)()

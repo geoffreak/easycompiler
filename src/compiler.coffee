@@ -35,7 +35,7 @@ class module.exports
     results = previousResults or {}
 
     # Iterate over each app to build
-    for app, appConfig of config when not options?.onlyApp? or app is options.onlyApp
+    for app, appConfig of config when not options?.onlyApp?.length or options.onlyApp.indexOf(app) isnt -1
       result = yield @runApp app, appConfig, options
       results[app] ?= {}
       results[app][key] = value for key, value of result when not _.isEmpty value
@@ -57,9 +57,9 @@ class module.exports
       stylesheets: {}
 
     yields = []
-    yields.push @runAppJs app, config, result, options if not options?.onlyPart? or 'javascripts' is options.onlyPart
-    yields.push @runAppCss app, config, result, options if not options?.onlyPart? or 'stylesheets' is options.onlyPart
-    yields.push @runAppRouting app, config, result, options if not options?.onlyPart? or 'routing' is options.onlyPart
+    yields.push @runAppJs app, config, result, options if not options?.onlyPart?.length or options.onlyPart.indexOf('javascripts') isnt -1
+    yields.push @runAppCss app, config, result, options if not options?.onlyPart?.length or options.onlyPart.indexOf('stylesheets') isnt -1
+    yields.push @runAppRouting app, config, result, options if not options?.onlyPart?.length or options.onlyPart.indexOf('routing') isnt -1
 
     yield yields
 
