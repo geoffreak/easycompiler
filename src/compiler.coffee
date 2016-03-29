@@ -36,7 +36,9 @@ class module.exports
 
     # Iterate over each app to build
     for app, appConfig of config when not options?.onlyApp? or app is options.onlyApp
-      results[app] = yield @runApp app, appConfig
+      result = yield @runApp app, appConfig, options
+      results[app] ?= {}
+      results[app][key] = value for key, value of result
     running = false
 
     # Run compiler
@@ -46,7 +48,7 @@ class module.exports
 
     yield results
 
-  @runApp: (app, config) ->
+  @runApp: (app, config, options) ->
 
     debug "Running app '#{app}'"
 
@@ -54,11 +56,12 @@ class module.exports
       javascripts: {}
       stylesheets: {}
 
-    yield [
-      @runAppJs app, config, result
-      @runAppCss app, config, result
-      @runAppRouting app, config, result
-    ]
+    yields = []
+    yields.push @runAppJs app, config, result, options if not options?.onlyPart? or 'javascripts' is options.onlyPart
+    yields.push @runAppCss app, config, result, options if not options?.onlyPart? or 'stylesheets' is options.onlyPart
+    yields.push @runAppRouting app, config, result, options if not options?.onlyPart? or 'routing' is options.onlyPart
+
+    yield yields
 
     # Return adjusted config
     result

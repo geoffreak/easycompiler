@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "async-replace": "~1.0.0",
-    "chokidar": "^1.0.0-rc4",
+    "chokidar": "^1.4.3",
     "clean-css": "~2.2.15",
     "co": "3.0.4",
     "co-fs-plus": "~0.3.1",

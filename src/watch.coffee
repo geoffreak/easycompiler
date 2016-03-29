@@ -25,22 +25,22 @@ class Watch
     for task in @_tasks
       kill = false
 
-      # Determine if we need to elevate this kill because it would kill something at a higher level
-      if app? and not task.app?
-        return @_kill() # Elevate to global kill
-      else if app? and pack? and not task.pack?
-        return @_kill app
-      else if app? and pack? and part? and not task.part?
-        return @_kill app, pack
-
       # Determine if we need to kill this task because it's the same or a subset of our upcoming new task
-      if (not app?) or (task.app is app)
+      if not app? or task.app is app
         kill = true
-      else if (app? and not pack?) or (task.app is app and task.pack is pack)
+        app = pack = part = null
+      else if not pack? or task.pack is pack
         kill = true
-      else if (app? and pack? and not part?) or (task.app is app and task.pack is pack and task.part is part)
+        pack = part = null
+      else if not part? or task.part is part
         kill = true
-      try task.fork.kill() if kill
+        part = null
+
+      debug 'Killing task', task.app, task.pack, task.part
+      if kill
+        try task.fork.kill()
+        task.killed = true
+
     return [app, pack, part] # Return the updated controls because we might have elevated
 
   @_watchingConfig: false
@@ -55,7 +55,7 @@ class Watch
     @_watchingConfig = true
 
   @_startCompile: (app, pack, part) ->
-    app = pack = part = null # Temporary manual override until race condition with output json can get resolved
+    # app = pack = part = null # Temporary manual override until race condition with output json can get resolved
     [app, pack, part] = @abort app, pack, part
     debug "Compiling", app, pack, part
     args = []
@@ -74,9 +74,9 @@ class Watch
     @_tasks.push task
     fork.on 'error', (e) =>
       console.error e.toString()
-    fork.on 'exit', =>
+    fork.on 'exit', (args...) =>
       @_tasks = _.without @_tasks, task
-
+      return if task.killed
       do co => yield @_loadTemplateWatches app, pack
 
   @_loadTemplateWatches: (app, pack) ->
@@ -95,7 +95,7 @@ class Watch
       watch.unwatch() if watch.app is app and watch.pack is pack and watch.type is type
     fswatcher = chokidar.watch files
     ready = false
-    fswatcher.on 'all', (event, file) => 
+    fswatcher.on 'all', (event, file) =>
       return if event is 'add' and not ready
       debug "File change: #{file}"
       @_startCompile app, pack, 'template'
