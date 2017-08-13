@@ -7,6 +7,7 @@ CSS   = require './compilers/css'
 Route = require './compilers/route'
 co    = require 'co'
 Deps  = require './dependencies'
+Versioner = require './versioner'
 
 class module.exports 
 
@@ -35,8 +36,9 @@ class module.exports
     results = previousResults or {}
 
     # Iterate over each app to build
+    versioner = new Versioner()
     for app, appConfig of config when not options?.onlyApp?.length or options.onlyApp.indexOf(app) isnt -1
-      result = yield @runApp app, appConfig, options
+      result = yield @runApp app, appConfig, options, versioner
       results[app] ?= {}
       results[app][key] = value for key, value of result when not _.isEmpty value
     running = false
@@ -48,7 +50,7 @@ class module.exports
 
     yield results
 
-  @runApp: (app, config, options) ->
+  @runApp: (app, config, options, versioner) ->
 
     debug "Running app '#{app}'"
 
@@ -57,16 +59,16 @@ class module.exports
       stylesheets: {}
 
     yields = []
-    yields.push @runAppJs app, config, result, options if not options?.onlyPart?.length or options.onlyPart.indexOf('javascripts') isnt -1
-    yields.push @runAppCss app, config, result, options if not options?.onlyPart?.length or options.onlyPart.indexOf('stylesheets') isnt -1
-    yields.push @runAppRouting app, config, result, options if not options?.onlyPart?.length or options.onlyPart.indexOf('routing') isnt -1
+    yields.push @runAppJs app, config, result, versioner if not options?.onlyPart?.length or options.onlyPart.indexOf('javascripts') isnt -1
+    yields.push @runAppCss app, config, result, versioner if not options?.onlyPart?.length or options.onlyPart.indexOf('stylesheets') isnt -1
+    yields.push @runAppRouting app, config, result, versioner if not options?.onlyPart?.length or options.onlyPart.indexOf('routing') isnt -1
 
     yield yields
 
     # Return adjusted config
     result
 
-  @runAppJs: (app, config, result) ->
+  @runAppJs: (app, config, result, versioner) ->
     # Compile JavaScript (and angular templates)
     if config?.javascripts?.packages
       
@@ -84,9 +86,15 @@ class module.exports
         
         # Run the compiler
         result.javascripts[pack] = yield JS.compile "#{app}/#{pack}", files, options, deps
-        # console.log config.javascripts.packages[pack]
 
-  @runAppCss: (app, config, result) ->
+        # Version the assets
+        continue unless result.javascripts[pack]?
+        result.javascripts[pack].dev = yield versioner.version result.javascripts[pack].dev, options
+        result.javascripts[pack].prod = yield versioner.version result.javascripts[pack].prod, options
+
+    return
+
+  @runAppCss: (app, config, result, versioner) ->
     # Compile CSS
     if config?.stylesheets?.packages
       
@@ -105,7 +113,14 @@ class module.exports
         # Run the compiler
         result.stylesheets[pack] = yield CSS.compile "#{app}/#{pack}", files, options, deps
 
-  @runAppRouting: (app, config, result) ->
+        # Version the assets
+        continue unless result.stylesheets[pack]?
+        result.stylesheets[pack].dev = yield versioner.version result.stylesheets[pack].dev, options
+        result.stylesheets[pack].prod = yield versioner.version result.stylesheets[pack].prod, options
+
+    return
+
+  @runAppRouting: (app, config, result, versioner) ->
     # Gather angular routing
     if config?.routing
       result.routing = yield Route.compile config.routing
