@@ -89,8 +89,8 @@ class module.exports
 
         # Version the assets
         continue unless result.javascripts[pack]?
-        result.javascripts[pack].dev = yield versioner.version result.javascripts[pack].dev, options
-        result.javascripts[pack].prod = yield versioner.version result.javascripts[pack].prod, options
+        result.javascripts[pack].dev = yield versioner.version "#{app}/#{pack}", result.javascripts[pack].dev, options
+        result.javascripts[pack].prod = yield versioner.version "#{app}/#{pack}", result.javascripts[pack].prod, options
 
     return
 
@@ -115,8 +115,8 @@ class module.exports
 
         # Version the assets
         continue unless result.stylesheets[pack]?
-        result.stylesheets[pack].dev = yield versioner.version result.stylesheets[pack].dev, options
-        result.stylesheets[pack].prod = yield versioner.version result.stylesheets[pack].prod, options
+        result.stylesheets[pack].dev = yield versioner.version "#{app}/#{pack}", result.stylesheets[pack].dev, options
+        result.stylesheets[pack].prod = yield versioner.version "#{app}/#{pack}", result.stylesheets[pack].prod, options
 
     return
 

@@ -26,6 +26,10 @@
     "q": "~1.0",
     "uglify-js": "~2.4.15"
   },
+  "devDependencies": {
+    "coffeelint": "^1.16.0",
+    "coffeescope2": "^0.4.5"
+  },
   "license": "MIT",
   "readmeFilename": "Readme.md",
   "repository": {
