@@ -26,6 +26,7 @@ class Versioner
       filename = path.basename(pathToFile)
       directory = path.resolve(options.webRoot, path.dirname(file).substr(1))
       sourceFile = path.resolve(directory, filename)
+      webPath = path.relative(options.root, directory)
 
       # Calculate the file hash
       hash = yield nodeCallbackToPromise(hashFiles)({ files: [sourceFile], noGlob: true })
@@ -35,7 +36,7 @@ class Versioner
         success = yield renameFile(sourceFile, newPath)
         throw new Error('Unable to move files') unless success
       else
-        newPath = path.resolve(options.buildRoot, pack, "#{hash}.#{filename}")
+        newPath = path.resolve(options.buildRoot, pack, webPath, "#{hash}.#{filename}")
         yield fs.mkdirp(path.dirname(newPath))
         success = yield copyFile(sourceFile, newPath)
         throw new Error('Unable to copy files') unless success
