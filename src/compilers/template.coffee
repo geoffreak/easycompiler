@@ -1,5 +1,6 @@
 fs     = require 'co-fs-plus'
 path   = require 'path'
+_      = require 'lodash'
 minify = require('html-minifier').minify
 debug  = require('debug')('compiler:template')
 
@@ -62,9 +63,14 @@ class module.exports
     debug "Writing template cache"
     output = path.resolve @config.buildRoot, "#{@pack}.cache.js"
 
+    sortedCache = []
+    for file, template of @cache
+      sortedCache.push { file, template }
+    sortedCache = _.sortBy sortedCache, 'file'
+
     content = """
       angular.module(#{JSON.stringify @config.angularTemplates}, []).run(['$templateCache', function($templateCache){
-        #{("$templateCache.put(#{JSON.stringify(file)}, #{JSON.stringify(template)});" for file, template of @cache).join("\n  ")}
+        #{("$templateCache.put(#{JSON.stringify(s.file)}, #{JSON.stringify(s.template)});" for s in sortedCache).join("\n  ")}
       }]);
     """
 
